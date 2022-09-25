@@ -1,0 +1,104 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: transaction-svc
+  labels:
+    app: transaction-svc
+    service: transaction-svc
+spec:
+  ports:
+    - port: 8080
+      name: http
+      targetPort: 8080
+  selector:
+    app: transaction-svc
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: transaction-svc
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: transaction-svc
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: transaction-svc
+    namespace: default
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: transaction-svc-lb
+  labels:
+    app: transaction-svc-lb
+    service: transaction-svc-lb
+spec:
+  ports:
+    - port: 80
+      name: http
+      targetPort: 8080
+  type: LoadBalancer
+
+  selector:
+    app: transaction-svc
+---
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: transaction-svc
+  labels:
+    app: transaction-svc
+    version: v1
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: transaction-svc
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: transaction-svc
+        version: v1
+    spec:
+      serviceAccountName: transaction-svc
+      containers:
+        - name: transaction-svc
+          image: coffeeandit/transaction-svc-spring:1.0.8
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: prd
+            - name: MONGO_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: transaction-svc-prd
+                  key: username
+            - name: MONGO_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: transaction-svc-prd
+                  key: password
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "512m"
+            limits:
+              memory: "512Mi"
+              cpu: "512m"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080

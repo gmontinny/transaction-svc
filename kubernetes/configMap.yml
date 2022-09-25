@@ -1,0 +1,40 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: transaction-svc-prd
+data:
+  application.yaml: |-
+
+    spring:
+      kafka:
+        bootstrap-servers: 34.134.111.31:9092
+        consumer:
+          group-id: transaction-svc
+          key-serializer: org.apache.kafka.common.serialization.StringDeserializer
+          value-serializer: org.apache.kafka.common.serialization.StringDeserializer
+          auto-offset-reset: latest
+          enable-auto-commit:  true
+      data:
+        mongodb:
+          uri: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@34.134.111.31:27017
+          database: transaction
+    management:
+      endpoints:
+        web:
+          exposure:
+            include: health, beans
+
+
+    limites:
+      url: http://limites-svc:8080
+
+    transaction:
+      url: http://localhost:8082
+      version: 1.0.0
+      validation:
+        enabled: true
+        banco: true
+        horario: true
+    events:
+      consumeTopic: transaction
+      returnTopic: transaction_extorno

@@ -1,0 +1,14 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: transaction-svc
+  cloud:
+    kubernetes:
+      secrets:
+        name: transaction-svc
+        enabled: true
+      config:
+        name: transaction-svc
+        namespace: default
